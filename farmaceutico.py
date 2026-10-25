@@ -9,6 +9,6 @@ class Farmaceutico(Utilizador):
             "listar_medicamentos",
             "registar_venda",
             "repor_stock",
-            "ver_vendas_proprias,"
-            "ver_stock"
+            "ver_vendas_proprias",
+            "ver_stock",
         ]
