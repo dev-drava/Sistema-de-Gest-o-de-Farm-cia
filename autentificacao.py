@@ -13,7 +13,7 @@ def criar_utilizador(id,nome, palavra_passe, tipo):
         return None
 
     
-def procurar_utilizador(nome, utilizadores):
+ def procurar_utilizador(nome, utilizadores):
     for u in utilizadores:
         if u.nome == nome:
             return u
@@ -24,16 +24,16 @@ def fazer_login(nome, palavra_passe, utilizadores):
     u = procurar_utilizador(nome, utilizadores)
 
     if u is None:
-        return "LOGIN_INVALIDO"
+        return "login_invalido"
 
     if u.verificar_palavra_passe(palavra_passe):
-        return "LOGIN_OK"
+        return "login_ok"
     else:
-        return "LOGIN_INVALIDO"
+        return "login_invalido"
 
 
 def verificar_permissao(utilizador, permissao):
     if utilizador.tem_permissao(permissao):
         return True
     else:
-        return "PERMISSAO_NEGADA"
+        return "permissao_negada"
