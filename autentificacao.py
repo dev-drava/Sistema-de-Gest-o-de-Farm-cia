@@ -13,7 +13,7 @@ def criar_utilizador(id,nome, palavra_passe, tipo):
         return None
 
     
- def procurar_utilizador(nome, utilizadores):
+def procurar_utilizador(nome, utilizadores):
     for u in utilizadores:
         if u.nome == nome:
             return u
