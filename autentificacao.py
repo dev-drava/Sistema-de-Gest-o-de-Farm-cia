@@ -11,3 +11,29 @@ def criar_utilizador(id,nome, palavra_passe, tipo):
         return Cliente(id,nome,palavra_passe)
     else:
         return None
+
+    
+def procurar_utilizador(nome, utilizadores):
+    for u in utilizadores:
+        if u.nome == nome:
+            return u
+    return None
+
+
+def fazer_login(nome, palavra_passe, utilizadores):
+    u = procurar_utilizador(nome, utilizadores)
+
+    if u is None:
+        return "LOGIN_INVALIDO"
+
+    if u.verificar_palavra_passe(palavra_passe):
+        return "LOGIN_OK"
+    else:
+        return "LOGIN_INVALIDO"
+
+
+def verificar_permissao(utilizador, permissao):
+    if utilizador.tem_permissao(permissao):
+        return True
+    else:
+        return "PERMISSAO_NEGADA"
