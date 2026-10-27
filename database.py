@@ -1,10 +1,8 @@
 import hashlib
 import mysql.connector
-from contextlib import contextmanager
 from pathlib import Path
 
 FICHEIRO_SQL = Path(__file__).parent / "farmacia.sql"
-
 
 CONFIG = {
     "host": "gateway01.ap-southeast-1.prod.alicloud.tidbcloud.com",
@@ -15,55 +13,74 @@ CONFIG = {
 }
 
 
-@contextmanager
 def obter_conexao():
-    conn = mysql.connector.connect(**CONFIG)
-    try:
-        yield conn
-    finally:
-        conn.close()
+    """Abre e devolve uma conexão normal ao MySQL / TiDB."""
+    return mysql.connector.connect(**CONFIG)
 
 
 def hash_senha(senha):
+    """Cria uma hash segura da senha usando SHA-256."""
     return hashlib.sha256(senha.encode()).hexdigest()
 
+
 def criar_tabelas():
+    """Lê o ficheiro SQL e cria as tabelas na base de dados se necessário."""
+    if not FICHEIRO_SQL.exists():
+        return
+    
     texto = FICHEIRO_SQL.read_text(encoding="utf-8")
     texto = "\n".join(l for l in texto.splitlines() if not l.strip().startswith("--"))
 
-    with obter_conexao() as conn:
+    conn = obter_conexao()
+    try:
         cur = conn.cursor()
         for instrucao in texto.split(";"):
             if instrucao.strip():
                 cur.execute(instrucao)
         conn.commit()
+    finally:
+        cur.close()
+        conn.close()
+
 
 def consultar(sql, params=()):
-    with obter_conexao() as conn:
+    """Executa uma consulta (SELECT) e devolve os resultados como dicionários."""
+    conn = obter_conexao()
+    try:
         cur = conn.cursor(dictionary=True)
         cur.execute(sql, params)
         return cur.fetchall()
+    finally:
+        cur.close()
+        conn.close()
 
 
 def executar(sql, params=()):
-    with obter_conexao() as conn:
-        try:
-            cur = conn.cursor()
-            cur.execute(sql, params)
-            conn.commit()
-            return cur.lastrowid
-        except Exception:
-            conn.rollback()
-            raise
+    """Executa uma operação de escrita (INSERT, UPDATE, DELETE)."""
+    conn = obter_conexao()
+    try:
+        cur = conn.cursor()
+        cur.execute(sql, params)
+        conn.commit()
+        return cur.lastrowid
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cur.close()
+        conn.close()
+
 
 
 def contar_utilizadores():
-    return consultar("SELECT COUNT(*) AS n FROM utilizador")[0]["n"]
+    resultado = consultar("SELECT COUNT(*) AS n FROM utilizador")
+    return resultado[0]["n"]
 
 
 def registar_utilizador(nome, senha, tipo):
     if consultar("SELECT id FROM utilizador WHERE nome=%s", (nome,)):
         return False
+    
     executar(
         "INSERT INTO utilizador (nome, palavra_passe_hash, tipo) VALUES (%s, %s, %s)",
         (nome, hash_senha(senha), tipo),
@@ -93,7 +110,7 @@ def pesquisar_medicamentos(termo):
 
 def adicionar_medicamento(nome, categoria, preco, stock, validade):
     return executar(
-        "INSERT INTO medicamentos (nome, categoria, preco, stock, validade) VALUES (%s,%s,%s,%s,%s)",
+        "INSERT INTO medicamentos (nome, categoria, preco, stock, validade) VALUES (%s, %s, %s, %s, %s)",
         (nome, categoria, preco, stock, validade),
     )
 
@@ -117,36 +134,45 @@ def registar_venda(id_med, id_cliente, quantidade, id_farm=None, metodo="dinheir
     if quantidade <= 0:
         return "QUANTIDADE_INVALIDA", False
 
-    with obter_conexao() as conn:
-        try:
-            cur = conn.cursor(dictionary=True)
-            cur.execute("SELECT preco, stock, stock_minimo FROM medicamentos WHERE id=%s AND ativo=1 FOR UPDATE", (id_med,))
-            med = cur.fetchone()
+    conn = obter_conexao()
+    try:
+        cur = conn.cursor(dictionary=True)
+        
+        cur.execute("SELECT preco, stock, stock_minimo FROM medicamentos WHERE id=%s AND ativo=1", (id_med,))
+        med = cur.fetchone()
 
-            if not med:
-                return "MEDICAMENTO_NAO_ENCONTRADO", False
-            if med["stock"] < quantidade:
-                return "STOCK_INSUFICIENTE", False
+        if not med:
+            return "MEDICAMENTO_NAO_ENCONTRADO", False
+        if med["stock"] < quantidade:
+            return "STOCK_INSUFICIENTE", False
 
-            total = med["preco"] * quantidade
-            cur.execute(
-                "INSERT INTO vendas (id_medicamento, id_cliente, id_farmaceutico, quantidade, total, metodo_pagamento) VALUES (%s,%s,%s,%s,%s,%s)",
-                (id_med, id_cliente, id_farm, quantidade, total, metodo),
-            )
-            cur.execute("UPDATE medicamentos SET stock = stock - %s WHERE id=%s", (quantidade, id_med))
-            conn.commit()
+        total = med["preco"] * quantidade
+        
+        cur.execute(
+            "INSERT INTO vendas (id_medicamento, id_cliente, id_farmaceutico, quantidade, total, metodo_pagamento) VALUES (%s, %s, %s, %s, %s, %s)",
+            (id_med, id_cliente, id_farm, quantidade, total, metodo),
+        )
+        
+        cur.execute("UPDATE medicamentos SET stock = stock - %s WHERE id=%s", (quantidade, id_med))
+        conn.commit()
 
-            return "COMPRA_CONFIRMADA", (med["stock"] - quantidade) <= med["stock_minimo"]
-        except Exception:
-            conn.rollback()
-            raise
+        stock_atualizado = med["stock"] - quantidade
+        stock_baixo = stock_atualizado <= med["stock_minimo"]
+
+        return "COMPRA_CONFIRMADA", stock_baixo
+        
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cur.close()
+        conn.close()
 
 
 _SQL_HISTORICO = (
     "SELECT v.id, m.nome AS medicamento, v.quantidade, v.total, v.metodo_pagamento, v.data_venda "
     "FROM vendas v JOIN medicamentos m ON m.id = v.id_medicamento "
 )
-
 
 def historico_cliente(id_cliente):
     return consultar(_SQL_HISTORICO + "WHERE v.id_cliente=%s ORDER BY v.data_venda DESC", (id_cliente,))
@@ -162,4 +188,4 @@ def historico_total():
 
 if __name__ == "__main__":
     criar_tabelas()
-    print("Utilizadores na BD:", contar_utilizadores())
+    print("Ligação ao TiDB Cloud bem-sucedida! Utilizadores na BD:", contar_utilizadores())
