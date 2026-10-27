@@ -10,7 +10,7 @@ def iniciar_sockets():
     servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     servidor.bind((HOST, PORT))
     servidor.listen(1)
-    print("Servidor à escuta...")
+    print("servidor à escuta")
 
     while True:
         conn, addr = servidor.accept()
