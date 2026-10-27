@@ -33,7 +33,7 @@ def verificar(medicamento, quantidade, tem_receita):
         return "Medicamento fora de validade."
     if quantidade > medicamento["stock"]:
         return "Stock insuficiente. Só há " + str(medicamento["stock"]) + "."
-    return ""
+    
 
 
 def adicionar_ao_carrinho(carrinho, medicamento, quantidade):
