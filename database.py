@@ -17,7 +17,6 @@ CONFIG = {
 
 @contextmanager
 def obter_conexao():
-    """Gestor de contexto para abrir e fechar a BD automaticamente."""
     conn = mysql.connector.connect(**CONFIG)
     try:
         yield conn
@@ -29,7 +28,6 @@ def hash_senha(senha):
     return hashlib.sha256(senha.encode()).hexdigest()
 
 def criar_tabelas():
-    """Lê o farmacia.sql e executa cada instrução (separadas por ';')."""
     texto = FICHEIRO_SQL.read_text(encoding="utf-8")
     texto = "\n".join(l for l in texto.splitlines() if not l.strip().startswith("--"))
 
