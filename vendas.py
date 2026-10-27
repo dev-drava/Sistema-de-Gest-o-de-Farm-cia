@@ -1,5 +1,5 @@
 from datetime import date
-from db import ligar
+from database import ligar
 
 
 def criar_tabelas():
