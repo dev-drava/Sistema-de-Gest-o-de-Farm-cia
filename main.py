@@ -1,4 +1,3 @@
-
 import socket
 import json
 from connect_db import start_connection
