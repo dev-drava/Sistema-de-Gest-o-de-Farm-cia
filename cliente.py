@@ -78,12 +78,12 @@ def mostrar_lista(resp):
 
 def menu_cliente(s):
     while True:
-        print("\n--- CLIENTE ---")
+        print("\nCLIENTE")
         print("1) Listar medicamentos")
         print("2) Pesquisar medicamentos")
         print("3) Efetuar compra")
         print("4) Ver o meu histórico")
-        print("0) Logout")
+        print("0) Sair")
         op = ler_opcao("> ", 0, 4)
         if op == 1:
             mostrar_lista(pedir(s, "LISTAR_MEDICAMENTOS"))
@@ -108,7 +108,7 @@ def menu_farmaceutico(s):
         print("3) Registar venda")
         print("4) Repor stock")
         print("5) Ver as minhas vendas")
-        print("0) Logout")
+        print("0) Sair")
         op = ler_opcao("> ", 0, 5)
         if op == 1:
             mostrar_lista(pedir(s, "LISTAR_MEDICAMENTOS"))
