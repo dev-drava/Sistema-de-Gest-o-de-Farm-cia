@@ -70,7 +70,15 @@ MENSAGENS = {
 
 def mostrar(resp_dict):
     codigo = resp_dict.get("resposta", "ERRO").upper()
-    print(MENSAGENS.get(codigo, "Resposta do servidor: " + str(resp_dict)))
+
+    print(MENSAGENS.get(
+        codigo,
+        "Resposta do servidor: " + str(resp_dict)
+    ))
+
+    if resp_dict.get("detalhes"):
+        print("Detalhes do erro:", resp_dict["detalhes"])
+
     if "alerta" in resp_dict:
         print("ALERTA: Stock do medicamento ficou abaixo do mínimo!")
 
@@ -158,17 +166,17 @@ def menu_admin(s):
             nome = ler_texto("Nome: ")
             cat = ler_texto("Categoria: ")
             preco = ler_preco("Preço: ")
-            stock = ler_opcao("Stock inicial: ", 0, 99999)
+            stock = ler_opcao("Stock inicial: ", 0, 999999)
             validade = ler_texto("Validade (AAAA-MM-DD): ")
             mostrar(pedir(s, {"acao": "ADICIONAR_MED", "nome": nome, "categoria": cat, "preco": preco, "stock": stock, "validade": validade}))
         elif op == 2:
-            id_med = ler_opcao("ID do medicamento: ", 1, 9999)
+            id_med = ler_opcao("ID do medicamento: ", 1, 999999)
             preco = ler_preco("Novo preço: ")
-            stock = ler_opcao("Novo stock: ", 0, 99999)
+            stock = ler_opcao("Novo stock: ", 0, 999999)
             validade = ler_texto("Nova validade (AAAA-MM-DD): ")
             mostrar(pedir(s, {"acao": "ATUALIZAR_MED", "id_medicamento": id_med, "preco": preco, "stock": stock, "validade": validade}))
         elif op == 3:
-            id_med = ler_opcao("ID do medicamento: ", 1, 9999)
+            id_med = ler_opcao("ID do medicamento: ", 1, 999999)
             mostrar(pedir(s, {"acao": "REMOVER_MED", "id_medicamento": id_med}))
         elif op == 4:
             mostrar_lista(pedir(s, {"acao": "LISTAR"}))
