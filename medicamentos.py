@@ -1,37 +1,38 @@
-from db import ligar
+from database import ligar
+
+
+def _executar(sql, params=(), fetch=None):
+    conn = ligar()
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(sql, params)
+        if fetch == "all":
+            return cursor.fetchall()
+        if fetch == "one":
+            return cursor.fetchone()
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def listar():
-    conn = ligar()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM medicamentos")
-    lista = cursor.fetchall()
-    conn.close()
-    return lista
+    return _executar("SELECT * FROM medicamentos", fetch="all")
 
 
 def procurar(texto):
-    conn = ligar()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM medicamentos WHERE nome LIKE %s", ("%" + texto + "%",))
-    lista = cursor.fetchall()
-    conn.close()
-    return lista
+    return _executar(
+        "SELECT * FROM medicamentos WHERE nome LIKE %s",
+        (f"%{texto}%",),
+        fetch="all",
+    )
 
 
 def obter(id):
-    conn = ligar()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM medicamentos WHERE id = %s", (id,))
-    medicamento = cursor.fetchone()
-    conn.close()
-    return medicamento
+    return _executar("SELECT * FROM medicamentos WHERE id = %s", (id,), fetch="one")
 
 
 def adicionar(nome, principio_ativo, dosagem, forma, categoria, preco, stock, receita, validade):
-    conn = ligar()
-    cursor = conn.cursor()
-    cursor.execute(
+    _executar(
         "INSERT INTO medicamentos (nome, principio_ativo, dosagem, forma, categoria, preco, stock, receita_obrigatoria, validade) "
         "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
         (nome, principio_ativo, dosagem, forma, categoria, preco, stock, receita, validade),
@@ -41,16 +42,8 @@ def adicionar(nome, principio_ativo, dosagem, forma, categoria, preco, stock, re
 
 
 def atualizar_stock(id, novo_stock):
-    conn = ligar()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE medicamentos SET stock = %s WHERE id = %s", (novo_stock, id))
-    conn.commit()
-    conn.close()
+    _executar("UPDATE medicamentos SET stock = %s WHERE id = %s", (novo_stock, id))
 
 
 def remover(id):
-    conn = ligar()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM medicamentos WHERE id = %s", (id,))
-    conn.commit()
-    conn.close()
+    _executar("DELETE FROM medicamentos WHERE id = %s", (id,))

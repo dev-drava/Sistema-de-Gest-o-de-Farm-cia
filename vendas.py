@@ -45,7 +45,7 @@ def adicionar_ao_carrinho(carrinho, medicamento, quantidade):
     carrinho.append({
         "id": medicamento["id"],
         "nome": medicamento["nome"],
-        "preco": float(medicamento["preco"]),
+        "preco": float(medicamento["preco"])
         "quantidade": quantidade,
     })
 
