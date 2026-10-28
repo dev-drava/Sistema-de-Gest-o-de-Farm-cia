@@ -122,3 +122,6 @@ def registar_venda(id_med, id_cliente, quantidade, id_farmaceutico=None, metodo=
     cursor.close()
     db.close()
     return "COMPRA_CONFIRMADA", stock_baixo
+
+def ligar():
+    return start_connection()

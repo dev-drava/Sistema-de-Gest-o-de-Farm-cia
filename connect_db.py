@@ -7,5 +7,6 @@ def start_connection():
         password="v9Ut1oWS3QywXWeR",
         database="gestao_farmacia",
         port="4000"
+
     )
 

@@ -2,7 +2,7 @@ from utilizador import Utilizador
 
 class Farmaceutico(Utilizador):
     def __init__(self, id, nome, palavra_passe):
-        super().__init__(id, nome, palavra_passe,"Farmaceutico")
+        super().__init__(id, nome, palavra_passe, tipo="Farmaceutico")
 
     def obter_permissoes(self):
         return [

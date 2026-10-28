@@ -72,7 +72,7 @@ def mostrar(resp_dict):
     codigo = resp_dict.get("resposta", "ERRO").upper()
     print(MENSAGENS.get(codigo, "Resposta do servidor: " + str(resp_dict)))
     if "alerta" in resp_dict:
-        print("⚠️ ALERTA: Stock do medicamento ficou abaixo do mínimo!")
+        print("ALERTA: Stock do medicamento ficou abaixo do mínimo!")
 
 def mostrar_lista(resp_dict):
     if resp_dict.get("resposta") != "OK":
@@ -86,7 +86,6 @@ def mostrar_lista(resp_dict):
         
     print()
     for item in dados:
-        # Formata os dados recebidos da base de dados para exibição limpa
         detalhes = " | ".join(f"{k}: {v}" for k, v in item.items())
         print(f" - {detalhes}")
 
@@ -206,9 +205,17 @@ def fazer_login(s):
 
 
 def fazer_registo(s):
+    print("\nTIPO DE CONTA:")
+    print("1) Cliente")
+    print("2) Farmacêutico")
+    op_tipo = ler_opcao("> ", 1, 2)
+    
+    tipo_escolhido = "Cliente" if op_tipo == 1 else "Farmaceutico"
+
     nome = ler_texto("Novo utilizador: ")
     senha = ler_texto("Palavra-passe: ")
-    mostrar(pedir(s, {"acao": "REGISTAR", "nome": nome, "senha": senha}))
+    
+    mostrar(pedir(s, {"acao": "REGISTAR", "nome": nome, "senha": senha, "tipo": tipo_escolhido}))
 
 
 def menu_inicial(s):
