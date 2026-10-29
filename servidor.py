@@ -14,7 +14,7 @@ class DecimalEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, decimal.Decimal):
             return float(obj)
-        return super(DecimalEncoder, self).default(obj)
+        return super().default(obj)
 
 
 try:
@@ -27,212 +27,152 @@ def tratar_pedido(pedido, sessao_atual):
     acao = pedido.get("acao", "").upper()
 
     try:
-        # AUTENTICAÇÃO E REGISTO
         if acao == "REGISTAR":
             from database import contar_utilizadores, registar_utilizador
 
-            total_users = contar_utilizadores()
-            tipo_pedido = pedido.get("tipo", "Cliente")
-
-            if total_users == 0:
-                tipo_final = "Admin"
-            else:
-                tipo_final = tipo_pedido
+            total = contar_utilizadores()
+            tipo = pedido.get("tipo", "Cliente")
+            tipo = "Admin" if total == 0 else tipo
 
             sucesso = registar_utilizador(
                 pedido.get("nome"),
                 pedido.get("senha"),
-                tipo_final
+                tipo
             )
 
-            if sucesso:
-                return {"resposta": "REGISTO_OK"}
-            else:
-                return {"resposta": "UTILIZADOR_EXISTE"}
+            return {"resposta": "REGISTO_OK" if sucesso else "UTILIZADOR_EXISTE"}
 
         elif acao == "LOGIN":
             from database import autenticar
 
-            nome = pedido.get("nome")
-            senha = pedido.get("senha")
-
-            user_db = autenticar(nome, senha)
+            user_db = autenticar(
+                pedido.get("nome"),
+                pedido.get("senha")
+            )
 
             if not user_db:
                 return {"resposta": "LOGIN_INVALIDO"}
 
-            objeto_user = criar_utilizador(
+            utilizador = criar_utilizador(
                 user_db["id"],
                 user_db["nome"],
                 user_db["palavra_passe_hash"],
                 user_db["tipo"]
             )
 
-            sessao_atual["user"] = objeto_user
+            sessao_atual["user"] = utilizador
 
             return {
                 "resposta": "LOGIN_OK",
-                "tipo": objeto_user.tipo,
-                "id": objeto_user.id
+                "tipo": utilizador.tipo,
+                "id": utilizador.id
             }
 
-        # MEDICAMENTOS: LISTAR E PESQUISAR
         elif acao == "LISTAR":
             lista = med_db.listar()
 
             for m in lista:
-                if "validade" in m and m["validade"]:
+                if m.get("validade"):
                     m["validade"] = str(m["validade"])
 
-            return {
-                "resposta": "OK",
-                "dados": lista
-            }
+            return {"resposta": "OK", "dados": lista}
 
         elif acao == "PESQUISAR":
-            termo = pedido.get("termo", "")
-            lista = med_db.procurar(termo)
+            lista = med_db.procurar(pedido.get("termo", ""))
 
             for m in lista:
-                if "validade" in m and m["validade"]:
+                if m.get("validade"):
                     m["validade"] = str(m["validade"])
 
-            return {
-                "resposta": "OK",
-                "dados": lista
-            }
+            return {"resposta": "OK", "dados": lista}
 
-        # AÇÕES DE ADMIN
-        # ADICIONAR MEDICAMENTO
         elif acao == "ADICIONAR_MED":
-            utilizador_atual = sessao_atual.get("user")
+            utilizador = sessao_atual.get("user")
 
-            if not utilizador_atual or utilizador_atual.tipo != "Admin":
+            if not utilizador or utilizador.tipo != "Admin":
                 return {"resposta": "PERMISSAO_NEGADA"}
 
-            nome = pedido.get("nome")
-            principio_ativo = pedido.get("principio_ativo")
-            dosagem = pedido.get("dosagem")
-            forma = pedido.get("forma")
-            categoria = pedido.get("categoria")
-            preco = pedido.get("preco")
-            stock = pedido.get("stock")
-            receita = pedido.get("receita", 0)
-            validade = pedido.get("validade")
-
             med_db.adicionar(
-                nome,
-                principio_ativo,
-                dosagem,
-                forma,
-                categoria,
-                preco,
-                stock,
-                receita,
-                validade
+                pedido.get("nome"),
+                pedido.get("principio_ativo"),
+                pedido.get("dosagem"),
+                pedido.get("forma"),
+                pedido.get("categoria"),
+                pedido.get("preco"),
+                pedido.get("stock"),
+                pedido.get("receita", 0),
+                pedido.get("validade")
             )
 
             return {"resposta": "MEDICAMENTO_ADICIONADO"}
 
-        # ATUALIZAR MEDICAMENTO
         elif acao == "ATUALIZAR_MED":
-            utilizador_atual = sessao_atual.get("user")
+            utilizador = sessao_atual.get("user")
 
-            if not utilizador_atual or utilizador_atual.tipo != "Admin":
+            if not utilizador or utilizador.tipo != "Admin":
                 return {"resposta": "PERMISSAO_NEGADA"}
 
-            id_med = pedido.get("id_medicamento")
-            preco = pedido.get("preco")
-            stock = pedido.get("stock")
-            validade = pedido.get("validade")
-
-            med_db.atualizar(id_med, preco, stock, validade)
+            med_db.atualizar(
+                pedido.get("id_medicamento"),
+                pedido.get("preco"),
+                pedido.get("stock"),
+                pedido.get("validade")
+            )
 
             return {"resposta": "MEDICAMENTO_ATUALIZADO"}
 
-        # REMOVER MEDICAMENTO
         elif acao == "REMOVER_MED":
-            utilizador_atual = sessao_atual.get("user")
+            utilizador = sessao_atual.get("user")
 
-            if not utilizador_atual or utilizador_atual.tipo != "Admin":
+            if not utilizador or utilizador.tipo != "Admin":
                 return {"resposta": "PERMISSAO_NEGADA"}
 
-            id_med = pedido.get("id_medicamento")
-
             if hasattr(med_db, "remover"):
-                med_db.remover(id_med)
+                med_db.remover(pedido.get("id_medicamento"))
             elif hasattr(med_db, "apagar"):
-                med_db.apagar(id_med)
+                med_db.apagar(pedido.get("id_medicamento"))
 
             return {"resposta": "MEDICAMENTO_REMOVIDO"}
 
-        # CRIAR FARMACÊUTICO
         elif acao == "CRIAR_FARMACEUTICO":
-            utilizador_atual = sessao_atual.get("user")
+            utilizador = sessao_atual.get("user")
 
-            if not utilizador_atual or utilizador_atual.tipo != "Admin":
+            if not utilizador or utilizador.tipo != "Admin":
                 return {"resposta": "PERMISSAO_NEGADA"}
 
             from database import registar_utilizador
 
-            nome = pedido.get("nome")
-            senha = pedido.get("senha")
-
             sucesso = registar_utilizador(
-                nome,
-                senha,
+                pedido.get("nome"),
+                pedido.get("senha"),
                 "Farmaceutico"
             )
 
-            if sucesso:
-                return {"resposta": "REGISTO_OK"}
+            return {"resposta": "REGISTO_OK" if sucesso else "UTILIZADOR_EXISTE"}
 
-            return {"resposta": "UTILIZADOR_EXISTE"}
+        elif acao in ["COMPRAR", "VENDER"]:
+            utilizador = sessao_atual.get("user")
 
-        # AÇÕES DE COMPRA, VENDA E REPOSIÇÃO DE STOCK
-        elif acao == "COMPRAR":
-            id_med = pedido.get("id_medicamento")
-            quantidade = pedido.get("quantidade", 0)
+            if not utilizador:
+                return {"resposta": "PERMISSAO_NEGADA"}
 
-            utilizador_atual = sessao_atual.get("user")
-            id_cliente = utilizador_atual.id if utilizador_atual else None
-
-            medicamento = med_db.obter(id_med)
-
-            if not medicamento:
-                return {"resposta": "MEDICAMENTO_NAO_ENCONTRADO"}
-
-            carrinho = [{
-                "id": medicamento["id"],
-                "nome": medicamento["nome"],
-                "preco": float(medicamento["preco"]),
-                "quantidade": quantidade
-            }]
-
-            venda_db.finalizar_venda(
-                carrinho,
-                id_cliente=id_cliente
-            )
-
-            return {"resposta": "COMPRA_CONFIRMADA"}
-
-        elif acao == "VENDER":
-            utilizador_atual = sessao_atual.get("user")
-
-            if (
-                not utilizador_atual
-                or utilizador_atual.tipo not in ["Admin", "Farmaceutico"]
-            ):
+            if acao == "VENDER" and utilizador.tipo not in ["Admin", "Farmaceutico"]:
                 return {"resposta": "PERMISSAO_NEGADA"}
 
             id_med = pedido.get("id_medicamento")
             quantidade = pedido.get("quantidade", 0)
-            id_cliente = pedido.get("id_cliente")
+            id_cliente = utilizador.id if acao == "COMPRAR" else pedido.get("id_cliente")
+
+            if quantidade <= 0:
+                return {"resposta": "QUANTIDADE_INVALIDA"}
 
             medicamento = med_db.obter(id_med)
 
             if not medicamento:
                 return {"resposta": "MEDICAMENTO_NAO_ENCONTRADO"}
+
+            if quantidade > medicamento["stock"]:
+                return {"resposta": "STOCK_INSUFICIENTE"}
 
             carrinho = [{
                 "id": medicamento["id"],
@@ -241,67 +181,51 @@ def tratar_pedido(pedido, sessao_atual):
                 "quantidade": quantidade
             }]
 
-            venda_db.finalizar_venda(
-                carrinho,
-                id_cliente=id_cliente
-            )
+            venda_db.finalizar_venda(carrinho, id_cliente=id_cliente)
 
-            return {"resposta": "VENDA_REGISTADA"}
+            resposta = "COMPRA_CONFIRMADA" if acao == "COMPRAR" else "VENDA_REGISTADA"
+            return {"resposta": resposta}
 
         elif acao == "REPOR":
-            utilizador_atual = sessao_atual.get("user")
+            utilizador = sessao_atual.get("user")
 
-            if (
-                not utilizador_atual
-                or utilizador_atual.tipo not in ["Admin", "Farmaceutico"]
-            ):
+            if not utilizador or utilizador.tipo not in ["Admin", "Farmaceutico"]:
                 return {"resposta": "PERMISSAO_NEGADA"}
 
-            id_med = pedido.get("id_medicamento")
             quantidade = pedido.get("quantidade", 0)
 
-            med_db.atualizar_stock(id_med, quantidade)
+            if quantidade <= 0:
+                return {"resposta": "QUANTIDADE_INVALIDA"}
+
+            med_db.atualizar_stock(
+                pedido.get("id_medicamento"),
+                quantidade
+            )
 
             return {"resposta": "STOCK_REPOSTO"}
 
-        # HISTÓRICOS
         elif acao == "HISTORICO":
-            utilizador_atual = sessao_atual.get("user")
+            utilizador = sessao_atual.get("user")
 
-            if not utilizador_atual:
+            if not utilizador:
                 return {"resposta": "PERMISSAO_NEGADA"}
 
-            if utilizador_atual.tipo == "Cliente":
-                if hasattr(venda_db, "listar_vendas_por_cliente"):
-                    vendas = venda_db.listar_vendas_por_cliente(
-                        utilizador_atual.id
-                    )
-                else:
-                    vendas = []
+            if utilizador.tipo == "Cliente":
+                vendas = venda_db.listar_vendas_por_cliente(utilizador.id)
             else:
-                if hasattr(venda_db, "listar_vendas"):
-                    vendas = venda_db.listar_vendas()
-                else:
-                    vendas = []
+                vendas = venda_db.listar_vendas()
 
-            for v in vendas:
-                if "data_venda" in v and v["data_venda"]:
-                    v["data_venda"] = str(v["data_venda"])
+            for venda in vendas:
+                if venda.get("data_venda"):
+                    venda["data_venda"] = str(venda["data_venda"])
 
-            return {
-                "resposta": "OK",
-                "dados": vendas
-            }
+            return {"resposta": "OK", "dados": vendas}
 
         return {"resposta": "ERRO"}
 
     except Exception as e:
         print(f"Erro ao processar a ação '{acao}': {e}")
-
-        return {
-            "resposta": "ERRO",
-            "detalhes": str(e)
-        }
+        return {"resposta": "ERRO", "detalhes": str(e)}
 
 
 def gerir_cliente(conexao, endereco):
@@ -315,28 +239,19 @@ def gerir_cliente(conexao, endereco):
             if not dados:
                 break
 
-            texto_recebido = dados.decode("utf-8").strip()
+            texto = dados.decode("utf-8").strip()
 
-            if not texto_recebido:
+            if not texto:
                 continue
 
             try:
-                pedido = json.loads(texto_recebido)
-
+                pedido = json.loads(texto)
             except json.JSONDecodeError:
                 resposta = {"resposta": "ERRO"}
+            else:
+                resposta = tratar_pedido(pedido, sessao_atual)
 
-                conexao.sendall(
-                    (json.dumps(resposta) + "\n").encode("utf-8")
-                )
-                continue
-
-            resposta = tratar_pedido(pedido, sessao_atual)
-
-            resposta_texto = (
-                json.dumps(resposta, cls=DecimalEncoder) + "\n"
-            )
-
+            resposta_texto = json.dumps(resposta, cls=DecimalEncoder) + "\n"
             conexao.sendall(resposta_texto.encode("utf-8"))
 
     except Exception as erro:
@@ -348,17 +263,8 @@ def gerir_cliente(conexao, endereco):
 
 
 def iniciar_servidor():
-    servidor = socket.socket(
-        socket.AF_INET,
-        socket.SOCK_STREAM
-    )
-
-    servidor.setsockopt(
-        socket.SOL_SOCKET,
-        socket.SO_REUSEADDR,
-        1
-    )
-
+    servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    servidor.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     servidor.bind((HOST, PORTA))
     servidor.listen(5)
 
@@ -368,10 +274,8 @@ def iniciar_servidor():
         while True:
             conexao, endereco = servidor.accept()
             gerir_cliente(conexao, endereco)
-
     except KeyboardInterrupt:
         print("\nA desligar o servidor...")
-
     finally:
         servidor.close()
 

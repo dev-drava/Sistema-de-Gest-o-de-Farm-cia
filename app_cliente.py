@@ -10,7 +10,6 @@ def ligar():
     return s
 
 def pedir(s, pedido_dict):
-    """Envia um dicionário convertido em JSON e lê a resposta em JSON."""
     mensagem = json.dumps(pedido_dict) + "\n"
     s.sendall(mensagem.encode("utf-8"))
     
@@ -114,8 +113,8 @@ def menu_cliente(s):
             termo = ler_texto("Termo a pesquisar: ")
             mostrar_lista(pedir(s, {"acao": "PESQUISAR", "termo": termo}))
         elif op == 3:
-            id_med = ler_opcao("ID do medicamento: ", 1, 9999)
-            qtd = ler_opcao("Quantidade: ", 1, 9999)
+            id_med = ler_opcao("ID do medicamento: ", 0, 999999)
+            qtd = ler_opcao("Quantidade: ", 0, 999999)
             mostrar(pedir(s, {"acao": "COMPRAR", "id_medicamento": id_med, "quantidade": qtd}))
         elif op == 4:
             mostrar_lista(pedir(s, {"acao": "HISTORICO"}))
@@ -126,9 +125,9 @@ def menu_cliente(s):
 def menu_farmaceutico(s):
     while True:
         print("\n FARMACÊUTICO")
-        print("1) Listar medicamentos")
-        print("2) Registar venda")
-        print("3) Repor stock")
+        print("1. Listar medicamentos")
+        print("2. Registar venda")
+        print("3. Repor stock")
         print("4) Ver as minhas vendas")
         print("0) Sair")
         op = ler_opcao("> ", 0, 4)
@@ -136,13 +135,13 @@ def menu_farmaceutico(s):
         if op == 1:
             mostrar_lista(pedir(s, {"acao": "LISTAR"}))
         elif op == 2:
-            id_cli = ler_opcao("ID do cliente: ", 1, 99999)
-            id_med = ler_opcao("ID do medicamento: ", 1, 9999)
-            qtd = ler_opcao("Quantidade: ", 1, 9999)
+            id_cli = ler_opcao("ID do cliente: ", 0, 9999999)
+            id_med = ler_opcao("ID do medicamento: ", 0, 999999)
+            qtd = ler_opcao("Quantidade: ", 0, 999999)
             mostrar(pedir(s, {"acao": "VENDER", "id_cliente": id_cli, "id_medicamento": id_med, "quantidade": qtd}))
         elif op == 3:
-            id_med = ler_opcao("ID do medicamento: ", 1, 9999)
-            qtd = ler_opcao("Quantidade a repor: ", 1, 99999)
+            id_med = ler_opcao("ID do medicamento: ", 0, 999999)
+            qtd = ler_opcao("Quantidade a repor: ", 0, 9999999)
             mostrar(pedir(s, {"acao": "REPOR", "id_medicamento": id_med, "quantidade": qtd}))
         elif op == 4:
             mostrar_lista(pedir(s, {"acao": "HISTORICO"}))
@@ -176,7 +175,7 @@ def menu_admin(s):
             validade = ler_texto("Nova validade (AAAA-MM-DD): ")
             mostrar(pedir(s, {"acao": "ATUALIZAR_MED", "id_medicamento": id_med, "preco": preco, "stock": stock, "validade": validade}))
         elif op == 3:
-            id_med = ler_opcao("ID do medicamento: ", 1, 999999)
+            id_med = ler_opcao("ID do medicamento: ", 0, 999999)
             mostrar(pedir(s, {"acao": "REMOVER_MED", "id_medicamento": id_med}))
         elif op == 4:
             mostrar_lista(pedir(s, {"acao": "LISTAR"}))
